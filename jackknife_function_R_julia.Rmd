@@ -1,6 +1,6 @@
 ---
-title: "Untitled"
-author: ""
+title: "Jackknife InClass"
+author: "Julia Mullokandova"
 date: "March 7, 2017"
 output: html_document
 ---
