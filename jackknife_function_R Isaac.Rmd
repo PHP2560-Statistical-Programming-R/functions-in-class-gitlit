@@ -302,7 +302,7 @@ return(jack.stderr)
 ```
 
 
-
+   
 ###Now invoke those functions
 
 ```{r}
