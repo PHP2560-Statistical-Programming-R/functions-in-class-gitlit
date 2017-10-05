@@ -300,7 +300,7 @@ jack.stderr <- sqrt(((n-1)^2/n)* estimate.var)
 return(jack.stderr)
 }
 ```
-
+       
 
    
 ###Now invoke those functions
