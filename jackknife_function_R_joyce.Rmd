@@ -25,7 +25,8 @@ The goal of this project is to work through building functions around the Jackki
 
 **PHP 2560 Only** (Why $(n-1)^2 / n$?  Think about just getting the standard
     error of the mean)
-
+    
+The t test has n-1 degrees of freedom , which is similar to this problem. In the t test we calculate estimates for the standard error hence the n-1 df.You have decreased the sample size by 1 when you omit an obesrvation and so this accounts for that.
 
 
 Write a function called `mean.jackknife` that takes argument `a_vector` and returns a jackknife estimate of the standard error.
@@ -33,7 +34,13 @@ Write a function called `mean.jackknife` that takes argument `a_vector` and retu
 
 ```{r, eval=FALSE}
 mean.jackknife <- function(a_vector) {
-  # Put your function in here
+  n<-length(a_vector)
+  theta_hat<-vector(length=length(a_vector))
+  for ( i in 1:length(a_vector)){
+ theta_hat[i]<-mean(a_vector[-i])
+}
+    var_estimate<- var(theta_hat) * (n-1)^2/(n)
+    jackknife.stderr<-sqrt(var_estimate)
   return(jackknife.stderr)
 }
 ```
@@ -44,6 +51,7 @@ mean.jackknife <- function(a_vector) {
 
 
 ```{r, eval = FALSE}
+set.seed(10)
 some_normals <- rnorm(100,mean=7,sd=5)
 mean(some_normals)
 (formula_se_of_mean <- sd(some_normals)/sqrt(length(some_normals)))
@@ -61,8 +69,8 @@ The following function is a way to calculate the method of moments estimators fo
 gamma.est <- function(the_data) {
   m <- mean(the_data)
   v <- var(the_data)
-  a <- m^2/v
-  s <- v/m
+  a <- m^2/v #mean^2/variance
+  s <- v/m  # variance/mean
   return(c(a=a,s=s))
 }
 ```
@@ -73,10 +81,22 @@ gamma.est <- function(the_data) {
 Write a function called `gamma.jackknife` that takes argument `a_vector` and returns jackknife standard error estimates on the gamma parameters. 
 
 ```{r, eval=FALSE }
+
 gamma.jackknife <- function(a_vector) {
-  
-  return(jackknife.stderrs)
+  n<-length(a_vector)
+  theta_hat_gamma<-matrix(rep(0,2*length(a_vector)),nrow=length(a_vector),ncol=2)
+  for ( i in 1:length(a_vector)){
+ theta_hat_gamma[i,]<-gamma.est(a_vector[-i])
+ 
 }
+    var_estimate_a<- var(theta_hat_gamma[,1]) * (n-1)^2/(n)
+    var_estimate_s<-var(theta_hat_gamma[,2])*(n-1)^2/(n)
+    jackknife.stderr_a<-sqrt(var_estimate_a)
+    jackknife.stderr_s<-sqrt(var_estimate_s)
+    answer<-c(jackknife.stderr_a,jackknife.stderr_s)
+  return(answer)
+}
+  
 ```
 
 
@@ -85,6 +105,7 @@ gamma.jackknife <- function(a_vector) {
 
 
 ```{r, eval=FALSE}
+set.seed(10)
 input <- rgamma(1000, shape=0.1, scale=10)
 gamma.est(input)
 gamma.jackknife(input)
@@ -97,9 +118,23 @@ gamma.jackknife(input)
 Write a function called `jackknife.lm` that takes arguments `df`, `formula` and `p` and returns jackknife standard error estimates on the coefficients of a linear regression model. 
 
 ```{r, eval=FALSE}
-jackknife.lm <- function(df,formula,p) {
+jackknife.lm <- function(df,formula,p) { #  p is the number of parameters besides the intercept
+  n<-nrow(df)
+  linear<-as.data.frame(matrix(NA,nrow=nrow(df),ncol=p+1))
   
-  return(jackknife.stderr)
+  for ( i in 1:nrow(df)){
+  linear[i,]<-lm(formula,df[-i,])$coefficients  # formula represents the x and y variables
+  }
+  
+  var_estimate_linear<-map_dbl(linear,var)
+ # var_estimate_linear_intercept<- var(linear[,1]) * (n-1)^2/(n)   # apply function
+  #var_estimate_linear_variable1<- var(linear[,2]) * (n-1)^2/(n)
+  
+  answer<-sqrt(var_estimate_linear)
+  #jackknife.stderr_intercept<-sqrt(var_estimate_linear_intercept)
+  #jackknife.stderr_variable1<-sqrt(var_estimate_linear_variable1)
+   # answer<-c(jackknife.stderr_linear_intercept,jackknife.stderr_variable1)
+  return(answer)
 }
 ```
 
@@ -109,13 +144,14 @@ jackknife.lm <- function(df,formula,p) {
 
 
 ```{r, eval=FALSE}
+set.seed(10)
 output <- 1.2 + 0.6*input +  rnorm(1000, 0, 2.1)
 data <- data.frame(output,input)
 my.lm <- lm(output~input, data=data)
 coefficients(my.lm)
 # "Official" standard errors
 sqrt(diag(vcov(my.lm)))
-jackknife.lm(df=data,formula="output~input",p=2)
+jackknife.lm(df=data,formula="output~input",p=1)
 ```
 
 
@@ -164,22 +200,34 @@ take the square roots
 - Write a function `omit.case` that omits a point given the data and returns the data minus that point. Make sure it can handle higher dimensions. 
     ```{r, eval=FALSE}
           omit.case <- function(the_data,omitted_point) {
+            if (is.null(dim(the_data))){
+            omit<-the_data[-omitted_point]
+            } else {
+              omit<-the_data[-omitted_point,]
+            }
+            return(omit)
         # This should take the data and omit one point at a time and return the new data
             }
     ```
 - Write a function `omit_and_est` that takes the data with an omitted point and returns whatever function your estimator does.  
     ```{r,eval=FALSE}
-    
-        omit_and_est <- function(omit) {
+  jackknife <- function(estimator,the_data) {  
+      if(is.null(dim(the_data))){   #this identifies the data as a 1d object
+    n <- length(the_data)
+  } else{
+    n<-nrow(the_data)
+  }
+  
+  
+    omit_and_est <- function(omit,estimator) {
+    theta_hat<-estimator(omit.case(the_data,omit))
               # This function should take the output of omit.case and use it as input for the estimator
         }
 
 
-```{r, eval=FALSE}
-jackknife <- function(estimator,the_data) {
-  
-  # Define n to be lenth or number of rows here
-  
+
+  # Define n to be length or number of rows here
+
   
   
   jackknife.ests <- matrix(sapply(1:n, omit_and_est), ncol=n)
