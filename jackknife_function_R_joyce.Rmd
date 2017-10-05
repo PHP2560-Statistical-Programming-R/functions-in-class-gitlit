@@ -26,7 +26,7 @@ The goal of this project is to work through building functions around the Jackki
 **PHP 2560 Only** (Why $(n-1)^2 / n$?  Think about just getting the standard
     error of the mean)
     
-The t test has n-1 degrees of freedom , which is similar to this problem. In the t test we calculate estimates for the standard error hence the n-1 df.You have decreased the sample size by 1 when you omit an obesrvation and so this accounts for that.
+The t test for the standard error of the mean has n-1 degrees of freedom. Here we have decreased the sample size by 1 when we omit an observation and so this accounts for that. We square the numerator to account for negatives
 
 
 Write a function called `mean.jackknife` that takes argument `a_vector` and returns a jackknife estimate of the standard error.
