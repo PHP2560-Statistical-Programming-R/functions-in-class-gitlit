@@ -120,21 +120,19 @@ Write a function called `jackknife.lm` that takes arguments `df`, `formula` and 
 ```{r, eval=FALSE}
 jackknife.lm <- function(df,formula,p) { #  p is the number of parameters besides the intercept
   n<-nrow(df)
-  linear<-as.data.frame(matrix(NA,nrow=nrow(df),ncol=p+1))
+  linear<-matrix(NA,nrow=nrow(df),ncol=p+1)
   
   for ( i in 1:nrow(df)){
-  linear[i,]<-lm(formula,df[-i,])$coefficients  # formula represents the x and y variables
+  linear[i,]<-lm(formula,data=df[-i,])$coefficients  # formula represents the x and y variables
+ 
   }
+  linear<-as.data.frame(linear)
+  var_estimate<-map_dbl(linear,var) 
+  var_estimate_linear<-var_estimate*(n-1)^2/(n)
   
-  var_estimate_linear<-map_dbl(linear,var)
- # var_estimate_linear_intercept<- var(linear[,1]) * (n-1)^2/(n)   # apply function
-  #var_estimate_linear_variable1<- var(linear[,2]) * (n-1)^2/(n)
+  jackknife.stderr<-sqrt(var_estimate_linear)
   
-  answer<-sqrt(var_estimate_linear)
-  #jackknife.stderr_intercept<-sqrt(var_estimate_linear_intercept)
-  #jackknife.stderr_variable1<-sqrt(var_estimate_linear_variable1)
-   # answer<-c(jackknife.stderr_linear_intercept,jackknife.stderr_variable1)
-  return(answer)
+  return(jackknife.stderr)
 }
 ```
 
@@ -211,25 +209,23 @@ take the square roots
     ```
 - Write a function `omit_and_est` that takes the data with an omitted point and returns whatever function your estimator does.  
     ```{r,eval=FALSE}
-  jackknife <- function(estimator,the_data) {  
-      if(is.null(dim(the_data))){   #this identifies the data as a 1d object
-    n <- length(the_data)
-  } else{
-    n<-nrow(the_data)
-  }
-  
-  
     omit_and_est <- function(omit) {
     theta_hat<-estimator(omit.case(the_data,omit))
               # This function should take the output of omit.case and use it as input for the estimator
-        }
+    }
+    
+    
+jackknife <- function(estimator,the_data) {  
+      if(is.null(dim(the_data))){   #this identifies the data as a 1d object
+    n <- length(the_data)    # Define n to be length or number of rows here
+  } else{
+    n<-nrow(the_data)
+  }
+    omit_and_est <- function(omit) {
+    theta_hat<-estimator(omit.case(the_data,omit))
+             
+    }
 
-
-
-  # Define n to be length or number of rows here
-
-  
-  
   jackknife.ests <- matrix(sapply(1:n, omit_and_est), ncol=n)
   var.of.reestimates <- apply(jackknife.ests,1,var)
   jackknife.var <- ((n-1)^2/n)* var.of.reestimates
