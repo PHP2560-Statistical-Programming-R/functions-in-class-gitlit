@@ -33,17 +33,9 @@ Write a function called `mean.jackknife` that takes argument `a_vector` and retu
 
 ```{r, eval=FALSE}
 mean.jackknife <- function(a_vector) {
-   n <- length(a_vector)
-  n1 <- vector(length=n)
-  for (i in 1:n) {
-    n1[i] <- mean(a_vector[-i])
-  }
-  varofest <- var(n1)
-  jkvar <- ((n-1)^2/n)*varofest
-  jackknife.stderr <- sqrt(jkvar)
+  # Put your function in here
   return(jackknife.stderr)
 }
-
 ```
 
 
@@ -82,17 +74,7 @@ Write a function called `gamma.jackknife` that takes argument `a_vector` and ret
 
 ```{r, eval=FALSE }
 gamma.jackknife <- function(a_vector) {
-  n <- length(a_vector)
-  n2 <- matrix(NA, nrow=2, ncol=n)
-  rownames(n2) <- c("a", "s")
-  for (i in 1:n){
-    fit <- gamma.est (a_vector[-i])
-    n2["a", i] <- fit["a"]
-    n2["s", i] <- fit["s"]
-  }
-  varofest <- apply(n2, 1, var)
-  jkvar <- ((n-1)^2/n)*varofest
-  jackknife.stderrs <- sqrt(jkvar)
+  
   return(jackknife.stderrs)
 }
 ```
@@ -116,15 +98,7 @@ Write a function called `jackknife.lm` that takes arguments `df`, `formula` and 
 
 ```{r, eval=FALSE}
 jackknife.lm <- function(df,formula,p) {
-  n = nrow (df)
-  n1 <- matrix (NA, nrow=p, ncol=n)
-  for (i in 1:n){
-    newcoeff = lm(as.formula(formula), data=df[-i,])$coefficients
-    n1[,i] = newcoeff
-  }
-var = apply (n1,1, var)
-jkvar = (n-1)^2/n*var
-jackknife.stderr = sqrt(jkvar)
+  
   return(jackknife.stderr)
 }
 ```
@@ -190,27 +164,21 @@ take the square roots
 - Write a function `omit.case` that omits a point given the data and returns the data minus that point. Make sure it can handle higher dimensions. 
     ```{r, eval=FALSE}
           omit.case <- function(the_data,omitted_point) {
-   dim=data(the_data)
-    if (is.null(dim)||length(dim)==1){
-      return(the_data[-omitted_point])
-    }else{
-      return(the_data[-omitted_point,])
-    }
-    }
+        # This should take the data and omit one point at a time and return the new data
+            }
     ```
 - Write a function `omit_and_est` that takes the data with an omitted point and returns whatever function your estimator does.  
     ```{r,eval=FALSE}
     
-    omit_and_est <- function(omit) {
-          estimator(omit.case(the_data,omit))
-    }
+        omit_and_est <- function(omit) {
+              # This function should take the output of omit.case and use it as input for the estimator
+        }
 
-```
 
 ```{r, eval=FALSE}
 jackknife <- function(estimator,the_data) {
   
- n <- nrow(data)
+  # Define n to be lenth or number of rows here
   
   
   
