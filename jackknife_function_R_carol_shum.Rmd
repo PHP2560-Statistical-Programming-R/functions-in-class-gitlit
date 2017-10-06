@@ -32,7 +32,7 @@ Answer: Because in a student t-test, we need a stardard error which takes into a
 Write a function called `mean.jackknife` that takes argument `a_vector` and returns a jackknife estimate of the standard error.
 
 
-```{r, eval=FALSE}
+```{r}
 mean.jackknife <- function(a_vector) {
   mean_vect=a_vector
   for(i in 1:length(mean_vect)){
@@ -259,7 +259,7 @@ all.equal(jackknife(estimator=mean,the_data=some_normals),
 
 
 
-```{r, eval=FALSE}
+```{r}
 all.equal(jackknife(estimator=gamma.est,the_data=data$input),
           gamma.jackknife(data$input))
 ```
@@ -267,7 +267,7 @@ all.equal(jackknife(estimator=gamma.est,the_data=data$input),
 ---
 
 
-```{r, eval=FALSE}
+```{r}
 all.equal(jackknife(estimator=gamma.est,the_data=data$input),
           gamma.jackknife(data$input), check.names=FALSE)
 ```
