@@ -138,14 +138,22 @@ want the standard error of our estimate, <span class="math inline">\(se_{\hat{\t
 <li>then <span class="math inline">\(se_{\hat{\theta}}=\)</span> square root of that variance</li>
 </ul>
 <p><strong>PHP 2560 Only</strong> (Why <span class="math inline">\((n-1)^2 / n\)</span>? Think about just getting the standard error of the mean)</p>
+<p>The t test for the standard error of the mean has n-1 degrees of freedom. Here we have decreased the sample size by 1 when we omit an observation and so this accounts for that. We square the numerator to account for negatives</p>
 <p>Write a function called <code>mean.jackknife</code> that takes argument <code>a_vector</code> and returns a jackknife estimate of the standard error.</p>
 <pre class="r"><code>mean.jackknife &lt;- function(a_vector) {
-  # Put your function in here
+  n&lt;-length(a_vector)
+  theta_hat&lt;-vector(length=length(a_vector))
+  for ( i in 1:length(a_vector)){
+ theta_hat[i]&lt;-mean(a_vector[-i])
+}
+    var_estimate&lt;- var(theta_hat) * (n-1)^2/(n)
+    jackknife.stderr&lt;-sqrt(var_estimate)
   return(jackknife.stderr)
 }</code></pre>
 <div id="jackknife-for-the-mean-example-test-your-code-here" class="section level4">
 <h4>Jackknife for the mean Example: test your code here</h4>
-<pre class="r"><code>some_normals &lt;- rnorm(100,mean=7,sd=5)
+<pre class="r"><code>set.seed(10)
+some_normals &lt;- rnorm(100,mean=7,sd=5)
 mean(some_normals)
 (formula_se_of_mean &lt;- sd(some_normals)/sqrt(length(some_normals)))
 all.equal(formula_se_of_mean,mean.jackknife(some_normals))</code></pre>
@@ -157,21 +165,32 @@ all.equal(formula_se_of_mean,mean.jackknife(some_normals))</code></pre>
 <pre class="r"><code>gamma.est &lt;- function(the_data) {
   m &lt;- mean(the_data)
   v &lt;- var(the_data)
-  a &lt;- m^2/v
-  s &lt;- v/m
+  a &lt;- m^2/v #mean^2/variance
+  s &lt;- v/m  # variance/mean
   return(c(a=a,s=s))
 }</code></pre>
 <div id="jackknife-for-gamma-parameters-function" class="section level3">
 <h3>Jackknife for Gamma Parameters Function</h3>
 <p>Write a function called <code>gamma.jackknife</code> that takes argument <code>a_vector</code> and returns jackknife standard error estimates on the gamma parameters.</p>
 <pre class="r"><code>gamma.jackknife &lt;- function(a_vector) {
-  
-  return(jackknife.stderrs)
+  n&lt;-length(a_vector)
+  theta_hat_gamma&lt;-matrix(rep(0,2*length(a_vector)),nrow=length(a_vector),ncol=2)
+  for ( i in 1:length(a_vector)){
+ theta_hat_gamma[i,]&lt;-gamma.est(a_vector[-i])
+ 
+}
+    var_estimate_a&lt;- var(theta_hat_gamma[,1]) * (n-1)^2/(n)
+    var_estimate_s&lt;-var(theta_hat_gamma[,2])*(n-1)^2/(n)
+    jackknife.stderr_a&lt;-sqrt(var_estimate_a)
+    jackknife.stderr_s&lt;-sqrt(var_estimate_s)
+    answer&lt;-c(jackknife.stderr_a,jackknife.stderr_s)
+  return(answer)
 }</code></pre>
 </div>
 <div id="jackknife-for-gamma-parameters-example" class="section level3">
 <h3>Jackknife for Gamma Parameters Example</h3>
-<pre class="r"><code>input &lt;- rgamma(1000, shape=0.1, scale=10)
+<pre class="r"><code>set.seed(10)
+input &lt;- rgamma(1000, shape=0.1, scale=10)
 gamma.est(input)
 gamma.jackknife(input)</code></pre>
 </div>
@@ -179,19 +198,32 @@ gamma.jackknife(input)</code></pre>
 <div id="jackknife-for-linear-regression-coefficients" class="section level2">
 <h2>Jackknife for linear regression coefficients</h2>
 <p>Write a function called <code>jackknife.lm</code> that takes arguments <code>df</code>, <code>formula</code> and <code>p</code> and returns jackknife standard error estimates on the coefficients of a linear regression model.</p>
-<pre class="r"><code>jackknife.lm &lt;- function(df,formula,p) {
+<pre class="r"><code>jackknife.lm &lt;- function(df,formula,p) { #  p is the number of parameters besides the intercept
+  n&lt;-nrow(df)
+  linear&lt;-matrix(NA,nrow=nrow(df),ncol=p+1)
+  
+  for ( i in 1:nrow(df)){
+  linear[i,]&lt;-lm(formula,data=df[-i,])$coefficients  # formula represents the x and y variables
+ 
+  }
+  linear&lt;-as.data.frame(linear)
+  var_estimate&lt;-map_dbl(linear,var) 
+  var_estimate_linear&lt;-var_estimate*(n-1)^2/(n)
+  
+  jackknife.stderr&lt;-sqrt(var_estimate_linear)
   
   return(jackknife.stderr)
 }</code></pre>
 <div id="jackknife-for-linear-regression-coefficients-example" class="section level3">
 <h3>Jackknife for linear regression coefficients Example</h3>
-<pre class="r"><code>output &lt;- 1.2 + 0.6*input +  rnorm(1000, 0, 2.1)
+<pre class="r"><code>set.seed(10)
+output &lt;- 1.2 + 0.6*input +  rnorm(1000, 0, 2.1)
 data &lt;- data.frame(output,input)
 my.lm &lt;- lm(output~input, data=data)
 coefficients(my.lm)
 # &quot;Official&quot; standard errors
 sqrt(diag(vcov(my.lm)))
-jackknife.lm(df=data,formula=&quot;output~input&quot;,p=2)</code></pre>
+jackknife.lm(df=data,formula=&quot;output~input&quot;,p=1)</code></pre>
 </div>
 </div>
 <div id="refactoring-the-jackknife" class="section level2">
@@ -230,25 +262,39 @@ take the square roots</code></pre>
 </ul></li>
 <li><p>Write a function <code>omit.case</code> that omits a point given the data and returns the data minus that point. Make sure it can handle higher dimensions.</p>
 <pre class="r"><code>      omit.case &lt;- function(the_data,omitted_point) {
+        if (is.null(dim(the_data))){
+        omit&lt;-the_data[-omitted_point]
+        } else {
+          omit&lt;-the_data[-omitted_point,]
+        }
+        return(omit)
     # This should take the data and omit one point at a time and return the new data
         }</code></pre></li>
 <li><p>Write a function <code>omit_and_est</code> that takes the data with an omitted point and returns whatever function your estimator does.</p>
-<pre class="r"><code>    omit_and_est &lt;- function(omit) {
+<pre class="r"><code>omit_and_est &lt;- function(omit) {
+theta_hat&lt;-estimator(omit.case(the_data,omit))
           # This function should take the output of omit.case and use it as input for the estimator
-    }</code></pre></li>
-</ul>
-<pre class="r"><code>jackknife &lt;- function(estimator,the_data) {
-  
-  # Define n to be lenth or number of rows here
-  
-  
-  
+}
+
+
+jackknife &lt;- function(estimator,the_data) {  
+  if(is.null(dim(the_data))){   #this identifies the data as a 1d object
+n &lt;- length(the_data)    # Define n to be length or number of rows here
+  } else{
+n&lt;-nrow(the_data)
+  }
+omit_and_est &lt;- function(omit) {
+theta_hat&lt;-estimator(omit.case(the_data,omit))
+
+}
+
   jackknife.ests &lt;- matrix(sapply(1:n, omit_and_est), ncol=n)
   var.of.reestimates &lt;- apply(jackknife.ests,1,var)
   jackknife.var &lt;- ((n-1)^2/n)* var.of.reestimates
   jackknife.stderr &lt;- sqrt(jackknife.var)
   return(jackknife.stderr)
-}</code></pre>
+}</code></pre></li>
+</ul>
 <hr />
 <div id="it-works" class="section level3">
 <h3>It works</h3>
@@ -269,7 +315,7 @@ all.equal(est.coefs(data), coefficients(my.lm))</code></pre>
 <hr />
 <pre class="r"><code>jackknife(estimator=est.coefs,the_data=data)
 all.equal(jackknife(estimator=est.coefs,the_data=data),
-          jackknife.lm(df=data,formula=&quot;output~input&quot;,p=2))</code></pre>
+          jackknife.lm(df=data,formula=&quot;output~input&quot;,p=1))</code></pre>
 </div>
 </div>
 <div id="further-refactoring-of-jackknife" class="section level2">
@@ -278,13 +324,20 @@ all.equal(jackknife(estimator=est.coefs,the_data=data),
 <ul>
 <li><p>write a function that calculates the <code>n</code> needed for the above code:</p>
 <pre class="r"><code>  data_size &lt;- function(the_data) {
-
+  if(is.null(dim(the_data))){   #this identifies the data as a 1d object
+n &lt;- length(the_data)
+  } else{
+n&lt;-nrow(the_data)
+  }
   }</code></pre></li>
 <li><p>Write a function that calculate the variance of all the estimates and returns the standard error</p></li>
 </ul>
 <pre class="r"><code>scale_and_sqrt_vars &lt;- function(jackknife.ests,n) {
-  
+  var_estimates &lt;- apply(jackknife.ests,1,var) * ((n-1)^2/n)
+  jackknife.stderr &lt;- sqrt(var_estimates)
   return(jackknife.stderr)
+  
+  
 }</code></pre>
 <div id="now-invoke-those-functions" class="section level3">
 <h3>Now invoke those functions</h3>
